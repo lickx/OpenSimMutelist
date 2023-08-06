@@ -56,7 +56,7 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private bool enabled = true;
-        private List<Scene> m_SceneList = new List<Scene>();
+        private List<Scene> m_SceneList = new();
         private string m_MuteListURL = String.Empty;
 
         IUserManagement m_uMan;
@@ -64,7 +64,7 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         {
             get
             {
-                if (m_uMan == null)
+                if (m_uMan is null)
                     m_uMan = m_SceneList[0].RequestModuleInterface<IUserManagement>();
                 return m_uMan;
             }
@@ -75,13 +75,13 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         public void Initialise(IConfigSource config)
         {
             IConfig cnf = config.Configs["Messaging"];
-            if (cnf == null)
+            if (cnf is null)
             {
                 enabled = false;
                 return;
             }
 
-            if (cnf != null && cnf.GetString("MuteListModule", "None") !=
+            if (cnf is not null && cnf.GetString("MuteListModule", "None") !=
                     "OpenSimMutelist")
             {
                 enabled = false;
@@ -165,7 +165,7 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
             ScenePresence scenePresence = scene.GetScenePresence(agentID);
             IClientAPI client = scenePresence.ControllingClient;
 
-            if (client != null)
+            if (client is not null)
             {
                 client.OnMuteListRequest -= OnMuteListRequest;
                 client.OnUpdateMuteListEntry -= OnUpdateMuteListEntry;
@@ -178,14 +178,14 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         //
         private Hashtable GenericXMLRPCRequest(Hashtable ReqParams, string method, string server)
         {
-            ArrayList SendParams = new ArrayList();
+            ArrayList SendParams = new();
             SendParams.Add(ReqParams);
 
             // Send Request
             XmlRpcResponse Resp;
             try
             {
-                XmlRpcRequest Req = new XmlRpcRequest(method, SendParams);
+                XmlRpcRequest Req = new(method, SendParams);
                 Resp = Req.Send(server, 30000);
             }
             catch (WebException ex)
@@ -193,10 +193,12 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
                 m_log.ErrorFormat("[OS MUTELIST]: Unable to connect to mutelist " +
                         "server {0}.  Exception {1}", m_MuteListURL, ex);
 
-                Hashtable ErrorHash = new Hashtable();
-                ErrorHash["success"] = false;
-                ErrorHash["errorMessage"] = "Unable to connect to mutelist server at this time. ";
-                ErrorHash["errorURI"] = "";
+                Hashtable ErrorHash = new()
+		{
+                    ["success"] = false,
+                    ["errorMessage"] = "Unable to connect to mutelist server at this time. ",
+                    ["errorURI"] = ""
+		};
 
                 return ErrorHash;
             }
@@ -206,10 +208,12 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
                         "[OS MUTELIST]: Unable to connect to mutelist server {0}. Method {1}, params {2}. " +
                         "Exception {3}", m_MuteListURL, method, ReqParams, ex);
 
-                Hashtable ErrorHash = new Hashtable();
-                ErrorHash["success"] = false;
-                ErrorHash["errorMessage"] = "Unable to connect to mutelist server at this time. ";
-                ErrorHash["errorURI"] = "";
+                Hashtable ErrorHash = new()
+		{
+                    ["success"] = false,
+                    ["errorMessage"] = "Unable to connect to mutelist server at this time. ",
+                    ["errorURI"] = ""
+		};
 
                 return ErrorHash;
             }
@@ -219,19 +223,23 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
                         "[OS MUTELIST]: Unable to connect to mutelist server {0}. Method {1}, params {2}. " +
                         "Exception {3}", m_MuteListURL, method, ReqParams, ex);
 
-                Hashtable ErrorHash = new Hashtable();
-                ErrorHash["success"] = false;
-                ErrorHash["errorMessage"] = "Unable to connect to mutelist server at this time. ";
-                ErrorHash["errorURI"] = "";
+                Hashtable ErrorHash = new()
+		{
+                    ["success"] = false,
+                    ["errorMessage"] = "Unable to connect to mutelist server at this time. ",
+                    ["errorURI"] = ""
+		};
 
                 return ErrorHash;
             }
             if (Resp.IsFault)
             {
-                Hashtable ErrorHash = new Hashtable();
-                ErrorHash["success"] = false;
-                ErrorHash["errorMessage"] = "Unable to process mutelist response at this time. ";
-                ErrorHash["errorURI"] = "";
+                Hashtable ErrorHash = new()
+		{
+                    ["success"] = false,
+                    ["errorMessage"] = "Unable to process mutelist response at this time. ",
+                    ["errorURI"] = ""
+		};
                 return ErrorHash;
             }
             Hashtable RespData = (Hashtable)Resp.Value;
@@ -262,15 +270,17 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
             string mutelist;
 
             IXfer xfer = client.Scene.RequestModuleInterface<IXfer>();
-            if (xfer == null)
+            if (xfer is null)
                 return;
 
             m_log.DebugFormat("[OS MUTELIST] Got mute list request");
 
             string filename = "mutes"+client.AgentId.ToString();
 
-            Hashtable ReqHash = new Hashtable();
-            ReqHash["avataruuid"] = client.AgentId.ToString();
+            Hashtable ReqHash = new()
+	    {
+                ["avataruuid"] = client.AgentId.ToString()
+	    };
 
             string serverURI = String.Empty;
             GetUserMutelistServerURI(client.AgentId, out serverURI);
@@ -280,12 +290,12 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
 
             //If no mutelist exists PHP sends "<string/>" which results in the
             //mutelist hashtable entry being null rather than an empty string.
-            if (!Convert.ToBoolean(result["success"]) || result["mutelist"] == null)
+            if (!Convert.ToBoolean(result["success"]) || result["mutelist"] is null)
                 mutelist = null;
             else
                 mutelist = result["mutelist"].ToString();
 
-            if (mutelist == null || mutelist.Length == 0)
+            if (mutelist is null || mutelist.Length == 0)
             {
                 xfer.AddNewFile(filename, new Byte[0]);
             }
@@ -311,12 +321,14 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         {
             m_log.DebugFormat("[OS MUTELIST] Got mute list update request");
 
-            Hashtable ReqHash = new Hashtable();
-            ReqHash["avataruuid"] = client.AgentId.ToString();
-            ReqHash["muteuuid"]   = MuteID.ToString();
-            ReqHash["name"]       = Name.ToString();
-            ReqHash["type"]       = type.ToString();
-            ReqHash["flags"]      = flags.ToString();
+            Hashtable ReqHash = new()
+	    {
+                ["avataruuid"] = client.AgentId.ToString(),
+                ["muteuuid"]   = MuteID.ToString(),
+                ["name"]       = Name.ToString(),
+                ["type"]       = type.ToString(),
+                ["flags"]      = flags.ToString()
+	    };
 
             string serverURI = String.Empty;
             GetUserMutelistServerURI(client.AgentId, out serverURI);
@@ -335,9 +347,11 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
         {
             m_log.DebugFormat("[OS MUTELIST] Got mute list removal request");
 
-            Hashtable ReqHash = new Hashtable();
-            ReqHash["avataruuid"] = client.AgentId.ToString();
-            ReqHash["muteuuid"]   = MuteID.ToString();
+            Hashtable ReqHash = new()
+	    {
+                ["avataruuid"] = client.AgentId.ToString(),
+                ["muteuuid"]   = MuteID.ToString()
+	    };
 
             string serverURI = String.Empty;
             GetUserMutelistServerURI(client.AgentId, out serverURI);
@@ -416,7 +430,7 @@ namespace OpenSim.Region.CoreModules.Avatar.InstantMessage
 
         private static UInt32[] InitializeTable(UInt32 polynomial)
         {
-            if (polynomial == DefaultPolynomial && defaultTable != null)
+            if (polynomial == DefaultPolynomial && defaultTable is not null)
                 return defaultTable;
 
             UInt32[] createTable = new UInt32[256];
